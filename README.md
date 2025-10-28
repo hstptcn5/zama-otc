@@ -33,6 +33,7 @@ This project implements a **Confidential OTC (Over-The-Counter) Escrow** smart c
 
 ## 📜 Architecture
 
+### High-Level Flow
 ```
 Maker                     OTC Escrow Contract                 Taker
  │  createEncryptedInput   │                                   │
@@ -50,6 +51,54 @@ Maker                     OTC Escrow Contract                 Taker
  │                   - transfer confidential balances          │
  │                   - call finalizeFill on-chain              │
  │                                                             │
+```
+
+### Detailed Trading Process
+
+```mermaid
+graph TD
+    A[Maker wants to trade] --> B[Create encrypted inputs]
+    B --> C[amountIn, amountOut, taker]
+    C --> D[Relayer SDK generates handles]
+    D --> E[confidentialTransferFrom]
+    E --> F[createOrder on contract]
+    F --> G[OrderCreated event emitted]
+    
+    H[Taker finds order] --> I[Create encrypted payment]
+    I --> J[confidentialTransferFrom payment]
+    J --> K[fillOrder on contract]
+    K --> L[FillRequested event emitted]
+    
+    L --> M[Gateway receives event]
+    M --> N[FHE validation: amountIn == takerPay?]
+    N --> O[Confidential transfers]
+    O --> P[takerPay → Maker]
+    P --> Q[amountOut → Taker]
+    Q --> R[finalizeFill on contract]
+    R --> S[OrderFinalized event emitted]
+    
+    T[Optional: Maker reveals terms] --> U[TermsRevealed event]
+    U --> V[Public audit available]
+```
+
+### Security & Privacy Layers
+
+```mermaid
+graph LR
+    A[User Input] --> B[FHE Encryption]
+    B --> C[Encrypted Data]
+    C --> D[Smart Contract]
+    D --> E[Gateway Validation]
+    E --> F[Confidential Transfers]
+    F --> G[Optional Reveal]
+    
+    H[Privacy Layer] --> I[All amounts encrypted]
+    I --> J[Selective disclosure]
+    J --> K[Zero-knowledge trading]
+    
+    L[Security Layer] --> M[FHE validation]
+    M --> N[Gateway authorization]
+    N --> O[Attestation verification]
 ```
 
 ### Flow
@@ -177,7 +226,118 @@ function revealTerms(uint256 id) external;
 
 ---
 
-## 📊 Diagram
+## 📊 System Architecture
+
+### Component Overview
+
+```mermaid
+graph TB
+    subgraph "Frontend Layer"
+        A[React Frontend]
+        B[CreateOrder Component]
+        C[FillOrder Component]
+        D[Orders Component]
+        E[RevealAndAudit Component]
+    end
+    
+    subgraph "FHEVM Layer"
+        F[useFhevm Hook]
+        G[Relayer SDK]
+        H[Encrypted Inputs]
+        I[Attestation]
+    end
+    
+    subgraph "Smart Contract Layer"
+        J[ConfidentialOtcEscrow]
+        K[ConfidentialTokenIn]
+        L[ConfidentialTokenOut]
+        M[Gateway]
+    end
+    
+    subgraph "Blockchain Layer"
+        N[Sepolia Testnet]
+        O[Ethereum Events]
+        P[Confidential Transfers]
+    end
+    
+    A --> F
+    B --> G
+    C --> G
+    D --> O
+    E --> O
+    
+    F --> H
+    G --> I
+    H --> J
+    I --> J
+    
+    J --> K
+    J --> L
+    J --> M
+    
+    K --> N
+    L --> N
+    M --> N
+    J --> N
+    
+    N --> O
+    O --> P
+```
+
+### Data Flow
+
+```mermaid
+sequenceDiagram
+    participant M as Maker
+    participant F as Frontend
+    participant R as Relayer SDK
+    participant C as Contract
+    participant G as Gateway
+    participant T as Taker
+    
+    M->>F: Create Order Form
+    F->>R: Generate encrypted inputs
+    R-->>F: Handles + Attestation
+    F->>C: createOrder(encrypted data)
+    C-->>F: OrderCreated event
+    
+    T->>F: Fill Order Form
+    F->>R: Generate encrypted payment
+    R-->>F: Payment handles + Attestation
+    F->>C: fillOrder(encrypted payment)
+    C-->>F: FillRequested event
+    
+    C->>G: FillRequested event
+    G->>G: FHE validation (amountIn == takerPay)
+    G->>C: Confidential transfers
+    G->>C: finalizeFill()
+    C-->>F: OrderFinalized event
+    
+    Note over M,T: Optional: Maker reveals terms
+    M->>F: Reveal Terms
+    F->>C: revealTerms()
+    C-->>F: TermsRevealed event
+```
+
+### Security Model
+
+```mermaid
+graph TD
+    A[User Data] --> B[FHE Encryption]
+    B --> C[Encrypted on Blockchain]
+    C --> D[Gateway Validation]
+    D --> E[Confidential Execution]
+    E --> F[Encrypted Results]
+    
+    G[Privacy Guarantees] --> H[Amounts Hidden]
+    H --> I[Identity Optional]
+    I --> J[Selective Disclosure]
+    
+    K[Security Guarantees] --> L[FHE Validation]
+    L --> M[Gateway Authorization]
+    M --> N[Attestation Verification]
+    N --> O[Atomic Execution]
+```
 
 ![Architecture](./docs/architecture.png)
 
@@ -215,6 +375,50 @@ function revealTerms(uint256 id) external;
 cd packages/fhevm-hardhat-template
 npx hardhat test --network sepolia
 ```
+
+## 🔒 Security & Privacy Model
+
+### Privacy Protection
+
+```mermaid
+graph LR
+    A[Raw Data] --> B[FHE Encryption]
+    B --> C[Encrypted Data]
+    C --> D[Blockchain Storage]
+    D --> E[Gateway Processing]
+    E --> F[Encrypted Results]
+    
+    G[Privacy Features] --> H[Amounts Hidden]
+    H --> I[Identity Optional]
+    I --> J[Selective Disclosure]
+    J --> K[Audit Trail Available]
+```
+
+### Security Layers
+
+```mermaid
+graph TD
+    A[Input Validation] --> B[FHE Attestation]
+    B --> C[Gateway Authorization]
+    C --> D[Encrypted Computation]
+    D --> E[Atomic Execution]
+    E --> F[Event Logging]
+    
+    G[Security Features] --> H[FHE Validation]
+    H --> I[Gateway Control]
+    I --> J[Attestation Verification]
+    J --> K[Confidential Transfers]
+```
+
+### Risk Mitigation
+
+| Risk | Mitigation | Implementation |
+|------|------------|----------------|
+| **Privacy Leakage** | FHE Encryption | All amounts encrypted as `euint64` |
+| **Invalid Trades** | FHE Validation | Gateway validates `amountIn == takerPay` |
+| **Unauthorized Access** | Gateway Control | Only authorized gateway can finalize |
+| **Data Tampering** | Attestation | Relayer SDK provides cryptographic proof |
+| **Front-running** | Encrypted Orders | Order terms hidden until reveal |
 
 ## 🔒 Security Notes
 - Never try to `require` encrypted booleans on-chain — comparisons must be validated by the Gateway.
