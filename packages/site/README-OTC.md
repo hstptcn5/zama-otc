@@ -17,9 +17,10 @@ A demonstration frontend for confidential over-the-counter (OTC) trading using *
 ### Smart Contract
 
 - **Contract**: `ConfidentialOtcEscrow.sol`
-- **Address**: `0x070935d23586bb29220373CC907F42C836822BbF`
-- **Gateway**: `0xB60CeC27c4E86dEbaE055dE850E57CDfc94a2D69`
-- **TokenAddress**: `0xcde70d205f9D467CFA1fC46b45C45a30E651E172`
+- **Address**: `0x8750304ab739c43e93dDA3950f57D51B5e9FeA3c`
+- **Gateway**: `0x8d30010878d95C7EeF78e543Ee2133db846633b8`
+- **TokenIn**: `0x55333a880b14eeCF996799Fd9c91a388af613a61`
+- **TokenOut**: `0x68FfE8fF91f8a2742E37f2D7012a43e19DC797a0`
 ### Frontend Components
 
 - **CreateOrder**: Form for makers to create new OTC orders
@@ -52,11 +53,11 @@ Edit `config/demo.ts` to use your deployed contract addresses:
 
 ```typescript
 export const DEMO_CONFIG = {
-  otcAddress: "0x070935d23586bb29220373CC907F42C836822BbF",
-  gatewayAddress: "0xB60CeC27c4E86dEbaE055dE850E57CDfc94a2D69",
-  // Token addresses are user inputs
-  tokenIn: "0x0000000000000000000000000000000000000000",
-  tokenOut: "0x0000000000000000000000000000000000000000",
+  otcAddress: "0x8750304ab739c43e93dDA3950f57D51B5e9FeA3c",
+  gatewayAddress: "0x8d30010878d95C7EeF78e543Ee2133db846633b8",
+  // Token addresses - Deployed on Sepolia
+  tokenIn: "0x55333a880b14eeCF996799Fd9c91a388af613a61",
+  tokenOut: "0x68FfE8fF91f8a2742E37f2D7012a43e19DC797a0",
 };
 ```
 
@@ -151,8 +152,8 @@ npm run dev
 
 ```bash
 # Add to .env.local if needed
-NEXT_PUBLIC_OTC_ADDRESS=0x070935d23586bb29220373CC907F42C836822BbF
-NEXT_PUBLIC_GATEWAY_ADDRESS=0xB60CeC27c4E86dEbaE055dE850E57CDfc94a2D69
+NEXT_PUBLIC_OTC_ADDRESS=0x8750304ab739c43e93dDA3950f57D51B5e9FeA3c
+NEXT_PUBLIC_GATEWAY_ADDRESS=0x8d30010878d95C7EeF78e543Ee2133db846633b8
 ```
 
 ### Network Support

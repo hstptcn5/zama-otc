@@ -359,7 +359,7 @@ export default function CreateOrder({ otcAddress, tokenIn, tokenOut, onOrderCrea
             // Reset form
             setAmountIn("100");
             setAmountOut("100");
-            setTakerAddr("0xB60CeC27c4E86dEbaE055dE850E57CDfc94a2D69");
+            setTakerAddr("0x8d30010878d95C7EeF78e543Ee2133db846633b8");
             setDeadline(Math.floor(Date.now() / 1000) + 86400);
 
         } catch (err: any) {
