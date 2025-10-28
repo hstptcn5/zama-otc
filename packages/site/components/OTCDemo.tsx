@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import CreateOrder from "./CreateOrder";
 import { Orders } from "./Orders";
 import { RevealAndAudit } from "./RevealAndAudit";
-import ContractDebugger from "./ContractDebugger";
 import { useOrderEvents } from "@/hooks/useOrderEvents";
 import { useMetaMaskEthersSigner } from "@/hooks/metamask/useMetaMaskEthersSigner";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,7 +15,7 @@ type Props = {
 };
 
 export default function OTCDemo({ otcAddress, gatewayAddress, tokenIn, tokenOut }: Props) {
-    const [activeTab, setActiveTab] = useState<"create" | "orders" | "audit" | "debug">("create");
+    const [activeTab, setActiveTab] = useState<"create" | "orders" | "audit">("create");
     const { orders, onOrderCreated, onOrderFilled, onTermsRevealed } = useOrderEvents();
     const { chainId, isConnected, connect } = useMetaMaskEthersSigner();
 
@@ -37,8 +36,7 @@ export default function OTCDemo({ otcAddress, gatewayAddress, tokenIn, tokenOut 
     const tabs = [
         { id: "create", label: "Create Order", icon: "📝" },
         { id: "orders", label: "View Orders", icon: "📋" },
-        // { id: "audit", label: "Reveal & Audit", icon: "🔍" },
-        // { id: "debug", label: "Debug", icon: "🔧" },
+        { id: "audit", label: "Reveal & Audit", icon: "🔍" },
     ] as const;
 
     // Check if current network supports FHEVM
