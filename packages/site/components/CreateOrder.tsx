@@ -86,6 +86,24 @@ const CONFIDENTIAL_TOKEN_ABI = [
         "stateMutability": "view",
         "type": "function"
     },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "to",
+                "type": "address"
+            },
+            {
+                "internalType": "uint64",
+                "name": "amount",
+                "type": "uint64"
+            }
+        ],
+        "name": "mint",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    }
 ];
 
 type Props = {
@@ -119,6 +137,7 @@ export default function CreateOrder({ otcAddress, tokenIn, tokenOut, onOrderCrea
     const [isApproved, setIsApproved] = useState<boolean>(false);
     const [checkingApproval, setCheckingApproval] = useState<boolean>(false);
     const [approving, setApproving] = useState<boolean>(false);
+    const [minting, setMinting] = useState<boolean>(false);
 
     // Transfer state
     const [transferring, setTransferring] = useState<boolean>(false);
@@ -188,6 +207,37 @@ export default function CreateOrder({ otcAddress, tokenIn, tokenOut, onOrderCrea
             setIsApproved(false);
         } finally {
             setCheckingApproval(false);
+        }
+    };
+
+    // Mint tokens for testing (only for development)
+    const mintTokens = async () => {
+        if (!ethersSigner || !userTokenOut || !userTokenIn) return;
+
+        setMinting(true);
+        setError("");
+
+        try {
+            // Mint tokenOut (amountOut)
+            const tokenOutContract = new ethers.Contract(userTokenOut, CONFIDENTIAL_TOKEN_ABI, ethersSigner);
+            const mintOutTx = await tokenOutContract.mint(ethersSigner.address, 1000); // Mint 1000 tokens
+            await mintOutTx.wait();
+            console.log("TokenOut minted successfully");
+
+            // Mint tokenIn (amountIn) 
+            const tokenInContract = new ethers.Contract(userTokenIn, CONFIDENTIAL_TOKEN_ABI, ethersSigner);
+            const mintInTx = await tokenInContract.mint(ethersSigner.address, 1000); // Mint 1000 tokens
+            await mintInTx.wait();
+            console.log("TokenIn minted successfully");
+
+            setSuccess("Tokens minted successfully! You can now create orders.");
+            setTimeout(() => setSuccess(""), 3000);
+
+        } catch (err: any) {
+            console.error("Minting failed:", err);
+            setError(`Minting failed: ${err.message}`);
+        } finally {
+            setMinting(false);
         }
     };
 
@@ -469,172 +519,228 @@ export default function CreateOrder({ otcAddress, tokenIn, tokenOut, onOrderCrea
 
     return (
         <div>
-            <div className="text-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Create Trading Order</h2>
-                <p className="text-gray-600">Fill in the details and create your confidential trade</p>
+            <div className="text-left mb-8">
+                <h2 className="text-4xl font-bold text-gray-800 mb-4 drop-shadow-sm">
+                    Create Trading Order
+                </h2>
+                <p className="text-xl text-gray-700 max-w-3xl">
+                    Fill in the details and create your confidential trade with complete privacy
+                </p>
             </div>
 
-            <form onSubmit={onSubmit} className="space-y-4">
-                {/* Transfer Option - Enhanced Design */}
-                <div className="flex items-center space-x-3 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-300/70 rounded-full shadow-sm">
-                    <input
-                        id="doTransferOut"
-                        type="checkbox"
-                        checked={doTransferOut}
-                        onChange={e => setDoTransferOut(e.target.checked)}
-                        className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300/80 rounded-full accent-blue-600"
-                    />
-                    <label htmlFor="doTransferOut" className="text-sm font-semibold text-gray-800 cursor-pointer">
-                        Transfer tokens immediately when creating order
-                    </label>
+            <form onSubmit={onSubmit} className="space-y-8">
+                {/* Transfer Option */}
+                <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4">
+                    <div className="flex items-center space-x-3">
+                        <input
+                            id="doTransferOut"
+                            type="checkbox"
+                            checked={doTransferOut}
+                            onChange={e => setDoTransferOut(e.target.checked)}
+                            className="h-5 w-5 text-gray-600 focus:ring-gray-500 border-gray-300 rounded accent-gray-600"
+                        />
+                        <label htmlFor="doTransferOut" className="text-lg font-semibold text-gray-800 cursor-pointer">
+                            Transfer tokens immediately when creating order
+                        </label>
+                    </div>
                 </div>
 
                 {/* Main Form Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Token In */}
-                    <div>
-                        <Label className="block text-sm font-medium text-gray-700 mb-2">Token In Address</Label>
-                        <Input
-                            value={userTokenIn}
-                            onChange={e => setUserTokenIn(e.target.value)}
-                            placeholder="0x..."
-                            className="h-10"
-                            required
-                        />
-                    </div>
+                <div className="gradient-card rounded-3xl p-6 border border-white/20 shadow-2xl">
+                    <h3 className="text-2xl font-bold text-gray-800 mb-6">
+                        Order Details
+                    </h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Token In */}
+                        <div className="space-y-2">
+                            <Label className="block text-sm font-bold text-gray-800 mb-2">Token In Address</Label>
+                            <Input
+                                value={userTokenIn}
+                                onChange={e => setUserTokenIn(e.target.value)}
+                                placeholder="0x..."
+                                className="h-10 rounded-xl border-2 border-gray-200 focus:border-pink-500 focus:ring-pink-500 text-sm bg-white/60 backdrop-blur-sm"
+                                required
+                            />
+                        </div>
 
-                    {/* Token Out */}
-                    <div>
-                        <Label className="block text-sm font-medium text-gray-700 mb-2">Token Out Address</Label>
-                        <Input
-                            value={userTokenOut}
-                            onChange={e => setUserTokenOut(e.target.value)}
-                            placeholder="0x..."
-                            className="h-10"
-                            required
-                        />
-                    </div>
+                        {/* Token Out */}
+                        <div className="space-y-2">
+                            <Label className="block text-sm font-bold text-gray-800 mb-2">Token Out Address</Label>
+                            <Input
+                                value={userTokenOut}
+                                onChange={e => setUserTokenOut(e.target.value)}
+                                placeholder="0x..."
+                                className="h-10 rounded-xl border-2 border-gray-200 focus:border-pink-500 focus:ring-pink-500 text-sm bg-white/60 backdrop-blur-sm"
+                                required
+                            />
+                        </div>
 
-                    {/* Amount In */}
-                    <div>
-                        <Label className="block text-sm font-medium text-gray-700 mb-2">Amount In</Label>
-                        <Input
-                            value={amountIn}
-                            onChange={e => setAmountIn(e.target.value)}
-                            type="number"
-                            min="1"
-                            placeholder="100"
-                            className="h-10"
-                            required
-                        />
-                    </div>
+                        {/* Amount In */}
+                        <div className="space-y-2">
+                            <Label className="block text-sm font-bold text-gray-800 mb-2">Amount In</Label>
+                            <Input
+                                value={amountIn}
+                                onChange={e => setAmountIn(e.target.value)}
+                                type="number"
+                                min="1"
+                                placeholder="100"
+                                className="h-10 rounded-xl border-2 border-gray-200 focus:border-pink-500 focus:ring-pink-500 text-sm bg-white/60 backdrop-blur-sm"
+                                required
+                            />
+                        </div>
 
-                    {/* Amount Out */}
-                    <div>
-                        <Label className="block text-sm font-medium text-gray-700 mb-2">Amount Out</Label>
-                        <Input
-                            value={amountOut}
-                            onChange={e => setAmountOut(e.target.value)}
-                            type="number"
-                            min="1"
-                            placeholder="100"
-                            className="h-10"
-                            required
-                        />
-                    </div>
+                        {/* Amount Out */}
+                        <div className="space-y-2">
+                            <Label className="block text-sm font-bold text-gray-800 mb-2">Amount Out</Label>
+                            <Input
+                                value={amountOut}
+                                onChange={e => setAmountOut(e.target.value)}
+                                type="number"
+                                min="1"
+                                placeholder="100"
+                                className="h-10 rounded-xl border-2 border-gray-200 focus:border-pink-500 focus:ring-pink-500 text-sm bg-white/60 backdrop-blur-sm"
+                                required
+                            />
+                        </div>
 
-                    {/* Taker Address */}
-                    <div>
-                        <Label className="block text-sm font-medium text-gray-700 mb-2">Taker Address (Optional)</Label>
-                        <Input
-                            value={takerAddr}
-                            onChange={e => setTakerAddr(e.target.value)}
-                            placeholder="0x0000000000000000000000000000000000000000"
-                            className="h-10"
-                        />
-                    </div>
+                        {/* Taker Address */}
+                        <div className="space-y-2">
+                            <Label className="block text-sm font-bold text-gray-800 mb-2">Taker Address (Optional)</Label>
+                            <Input
+                                value={takerAddr}
+                                onChange={e => setTakerAddr(e.target.value)}
+                                placeholder="0x0000000000000000000000000000000000000000"
+                                className="h-10 rounded-xl border-2 border-gray-200 focus:border-pink-500 focus:ring-pink-500 text-sm bg-white/60 backdrop-blur-sm"
+                            />
+                        </div>
 
-                    {/* Deadline */}
-                    <div>
-                        <Label className="block text-sm font-medium text-gray-700 mb-2">Deadline (Unix timestamp)</Label>
-                        <Input
-                            value={deadline}
-                            onChange={e => setDeadline(parseInt(e.target.value))}
-                            type="number"
-                            placeholder="1759332928"
-                            className="h-10"
-                        />
+                        {/* Deadline */}
+                        <div className="space-y-2">
+                            <Label className="block text-sm font-bold text-gray-800 mb-2">Deadline (Unix timestamp)</Label>
+                            <Input
+                                value={deadline}
+                                onChange={e => setDeadline(parseInt(e.target.value))}
+                                type="number"
+                                placeholder="1759332928"
+                                className="h-10 rounded-xl border-2 border-gray-200 focus:border-pink-500 focus:ring-pink-500 text-sm bg-white/60 backdrop-blur-sm"
+                            />
+                        </div>
                     </div>
                 </div>
 
-                {/* Operator Approval Status - Enhanced Design */}
+                {/* Operator Approval Status */}
                 {doTransferOut && (
-                    <div className="flex items-center justify-between p-4 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-300/70 rounded-full shadow-sm">
-                        <div className="flex items-center space-x-3">
-                            <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center">
-                                <span className="text-amber-600 text-sm">🔐</span>
-                            </div>
-                            <div>
-                                <span className="text-sm font-semibold text-amber-800">Operator Approval</span>
-                                <div className="flex items-center space-x-2 mt-1">
-                                    <span className="text-xs text-amber-700">
-                                        {checkingApproval ? "Checking..." : isApproved ? "✅ Approved" : "❌ Not Approved"}
-                                    </span>
+                    <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 shadow-sm">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-4">
+                                <div className="w-12 h-12 bg-gray-600 rounded-xl flex items-center justify-center">
+                                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 className="text-lg font-bold text-gray-900">Operator Approval Required</h4>
+                                    <p className="text-sm text-gray-700 mt-1">
+                                        {checkingApproval ? "Checking approval status..." : 
+                                         isApproved ? "Contract is approved to transfer your tokens" : 
+                                         "Contract needs approval to transfer your tokens"}
+                                    </p>
                                 </div>
                             </div>
-                        </div>
-                        <div className="flex space-x-2">
-                            <Button
-                                type="button"
-                                onClick={checkOperatorApproval}
-                                size="sm"
-                                variant="outline"
-                                disabled={checkingApproval}
-                                className="rounded-full border-amber-300/80 text-amber-700 hover:bg-amber-100"
-                            >
-                                Refresh
-                            </Button>
-                            {!isApproved && (
+                            <div className="flex space-x-3">
                                 <Button
                                     type="button"
-                                    onClick={approveOperator}
+                                    onClick={checkOperatorApproval}
                                     size="sm"
-                                    disabled={approving || checkingApproval}
-                                    className="rounded-full bg-amber-600 hover:bg-amber-700 text-white"
+                                    variant="outline"
+                                    disabled={checkingApproval}
+                                    className="rounded-xl border-gray-300 text-gray-700 hover:bg-gray-100 px-6 py-2"
                                 >
-                                    {approving ? "Approving..." : "Approve"}
+                                    {checkingApproval ? "Checking..." : "Refresh"}
                                 </Button>
-                            )}
+                                {!isApproved && (
+                                    <Button
+                                        type="button"
+                                        onClick={approveOperator}
+                                        size="sm"
+                                        disabled={approving || checkingApproval}
+                                        className="rounded-xl bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 shadow-lg hover:shadow-xl"
+                                    >
+                                        {approving ? "Approving..." : "Approve"}
+                                    </Button>
+                                )}
+                            </div>
                         </div>
                     </div>
                 )}
 
                 {/* Transfer Status - Enhanced Design */}
                 {doTransferOut && transferring && (
-                    <div className="flex items-center space-x-3 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-300 rounded-full shadow-sm">
-                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                            <span className="text-blue-600 text-sm">🔄</span>
+                    <div className="bg-gradient-to-r from-blue-50 via-cyan-50 to-blue-50 border border-blue-200/70 rounded-2xl p-6 shadow-sm">
+                        <div className="flex items-center space-x-4">
+                            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl flex items-center justify-center">
+                                <svg className="w-6 h-6 text-white animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 className="text-lg font-bold text-blue-900">Transferring Tokens</h4>
+                                <p className="text-sm text-blue-700">Transferring {amountOut} tokens to OTC contract...</p>
+                            </div>
                         </div>
-                        <span className="text-sm font-semibold text-blue-800">Transferring {amountOut} tokens...</span>
                     </div>
                 )}
 
                 {/* Transfer Success - Enhanced Design */}
                 {doTransferOut && !transferring && transferHash && (
-                    <div className="flex items-center space-x-3 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-300 rounded-full shadow-sm">
-                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                            <span className="text-green-600 text-sm">✅</span>
+                    <div className="bg-gradient-to-r from-green-50 via-emerald-50 to-green-50 border border-green-200/70 rounded-2xl p-6 shadow-sm">
+                        <div className="flex items-center space-x-4">
+                            <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
+                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 className="text-lg font-bold text-green-900">Transfer Completed</h4>
+                                <p className="text-sm text-green-700">Tokens successfully transferred to OTC contract</p>
+                            </div>
                         </div>
-                        <span className="text-sm font-semibold text-green-800">Transfer completed successfully</span>
                     </div>
                 )}
+
+                {/* Mint Tokens Section - For Testing */}
+                <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 shadow-sm">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                            <div className="w-12 h-12 bg-gray-600 rounded-xl flex items-center justify-center">
+                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 className="text-lg font-bold text-gray-900">Test Tokens</h4>
+                                <p className="text-sm text-gray-700">Mint test tokens for development (1000 each)</p>
+                            </div>
+                        </div>
+                        <Button
+                            type="button"
+                            onClick={mintTokens}
+                            size="sm"
+                            disabled={minting}
+                            className="rounded-xl bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 shadow-lg hover:shadow-xl"
+                        >
+                            {minting ? "Minting..." : "Mint Tokens"}
+                        </Button>
+                    </div>
+                </div>
 
                 {/* Submit Button */}
                 <div className="text-center">
                     <Button
                         type="submit"
                         size="lg"
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full font-medium transition-colors"
+                        className="w-full bg-gray-600 hover:bg-gray-700 text-white px-8 py-3 rounded-full font-medium transition-colors"
                         disabled={loading || transferring || !fhevmInstance || !ethersSigner || fhevmStatus !== "ready" || (doTransferOut && !isApproved)}
                     >
                         {transferring ? "Transferring Tokens..." : loading ? "Creating Order..." : (doTransferOut && !isApproved) ? "Approve Operator First" : "Create Order"}
@@ -643,15 +749,15 @@ export default function CreateOrder({ otcAddress, tokenIn, tokenOut, onOrderCrea
 
                 {/* Status Indicators */}
                 {fhevmStatus !== "ready" && (
-                    <div className="text-center p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                        <p className="text-sm text-yellow-800">
+                    <div className="text-center p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                        <p className="text-sm text-gray-800">
                             {(fhevmStatus as string) === "loading" && "🔄 FHEVM Loading..."}
                             {fhevmStatus === "error" && "❌ FHEVM Error"}
                             {fhevmStatus === "unsupported" && "⚠️ Network Not Supported"}
                             {fhevmStatus === "idle" && "⏳ Waiting for connection..."}
                         </p>
                         {fhevmStatus === "unsupported" && (
-                            <p className="text-xs text-yellow-700 mt-1">
+                            <p className="text-xs text-gray-700 mt-1">
                                 Please switch to Sepolia testnet or Hardhat local network for FHEVM support.
                             </p>
                         )}

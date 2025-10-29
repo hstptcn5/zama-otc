@@ -5,3 +5,63 @@
 .zama-bg {
   background-color: #ffd200;
 }
+
+/* Custom gradient backgrounds */
+.gradient-primary {
+  background: linear-gradient(135deg, #FF3087 0%, #1B36A6 25%, #002027 50%, #6D3BFF 75%, #FF3087 100%);
+}
+
+.gradient-secondary {
+  background: linear-gradient(45deg, #1B36A6 0%, #6D3BFF 50%, #FF3087 100%);
+}
+
+.gradient-accent {
+  background: linear-gradient(90deg, #FF3087 0%, #6D3BFF 100%);
+}
+
+.gradient-soft {
+  background: linear-gradient(135deg, rgba(255, 48, 135, 0.1) 0%, rgba(27, 54, 166, 0.1) 25%, rgba(0, 32, 39, 0.1) 50%, rgba(109, 59, 255, 0.1) 75%, rgba(255, 48, 135, 0.1) 100%);
+}
+
+.gradient-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.5) 100%);
+  backdrop-filter: blur(15px);
+}
+
+/* Animated gradient background */
+.animated-gradient {
+  background: linear-gradient(-45deg, #FF3087, #1B36A6, #002027, #6D3BFF, #FF3087);
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease infinite;
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Glass morphism effect */
+.glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Custom button styles */
+.btn-gradient {
+  background: linear-gradient(135deg, #FF3087 0%, #1B36A6 50%, #6D3BFF 100%);
+  transition: all 0.3s ease;
+}
+
+.btn-gradient:hover {
+  background: linear-gradient(135deg, #FF3087 0%, #1B36A6 25%, #002027 50%, #6D3BFF 75%, #FF3087 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}

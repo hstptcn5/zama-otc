@@ -82,6 +82,52 @@ function useMetaMaskInternal(): UseMetaMaskState {
 
   const isConnected = hasProvider && hasAccounts && hasChain;
 
+  // Sepolia network configuration
+  const SEPOLIA_CHAIN_ID = 11155111;
+  const SEPOLIA_CHAIN_ID_HEX = "0xaa36a7";
+
+  // Function to switch to Sepolia network
+  const switchToSepolia = useCallback(
+    async (provider: Eip1193ProviderWithEvent) => {
+      try {
+        // Try to switch to Sepolia
+        await provider.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: SEPOLIA_CHAIN_ID_HEX }],
+        });
+        console.log(`[useMetaMask] Switched to Sepolia network`);
+      } catch (switchError: any) {
+        // If the chain doesn't exist in MetaMask, add it
+        if (switchError.code === 4902) {
+          try {
+            await provider.request({
+              method: "wallet_addEthereumChain",
+              params: [
+                {
+                  chainId: SEPOLIA_CHAIN_ID_HEX,
+                  chainName: "Sepolia",
+                  nativeCurrency: {
+                    name: "ETH",
+                    symbol: "ETH",
+                    decimals: 18,
+                  },
+                  rpcUrls: ["https://sepolia.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161"],
+                  blockExplorerUrls: ["https://sepolia.etherscan.io"],
+                },
+              ],
+            });
+            console.log(`[useMetaMask] Added and switched to Sepolia network`);
+          } catch (addError) {
+            console.error(`[useMetaMask] Failed to add Sepolia network:`, addError);
+          }
+        } else {
+          console.error(`[useMetaMask] Failed to switch to Sepolia network:`, switchError);
+        }
+      }
+    },
+    []
+  );
+
   const connect = useCallback(() => {
     if (!_currentProvider) {
       return;
@@ -252,6 +298,22 @@ function useMetaMaskInternal(): UseMetaMaskState {
       updateChainId();
     }
   }, [providers]);
+
+  // Auto-switch to Sepolia when accounts are connected but not on Sepolia
+  useEffect(() => {
+    if (
+      _currentProvider &&
+      accounts &&
+      accounts.length > 0 &&
+      chainId !== undefined &&
+      chainId !== SEPOLIA_CHAIN_ID
+    ) {
+      console.log(
+        `[useMetaMask] Accounts connected but not on Sepolia (current: ${chainId}). Switching to Sepolia...`
+      );
+      switchToSepolia(_currentProvider);
+    }
+  }, [_currentProvider, accounts, chainId, switchToSepolia]);
 
   // Unmount
   useEffect(() => {
